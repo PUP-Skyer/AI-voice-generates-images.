@@ -68,7 +68,7 @@ AI语音绘图助手是一款革命性的语音控制绘图工具，彻底改变
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/yourusername/voice-draw-repo.git
+git clone https://github.com/PUP-Skyer/AI-voice-generates-images..git
 cd voice-draw-repo
 
 # 2. 启动HTTP服务器（任选一种）
@@ -251,7 +251,7 @@ AI教师模式通过语音一步步指导用户绘画，提供实时反馈和鼓
 # 安装Live Server扩展用于实时预览
 
 # 3. 克隆项目
-git clone https://github.com/yourusername/voice-draw-repo.git
+git clone https://github.com/PUP-Skyer/AI-voice-generates-images..git
 cd voice-draw-repo
 
 # 4. 启动开发服务器
@@ -309,9 +309,9 @@ SOFTWARE.
 
 ## 📞 联系方式
 
-- 项目主页：https://github.com/yourusername/voice-draw-repo
-- 问题反馈：https://github.com/yourusername/voice-draw-repo/issues
-- 邮箱联系：your.email@example.com
+- 项目主页：https://github.com/PUP-Skyer/AI-voice-generates-images.
+- 问题反馈：https://github.com/PUP-Skyer/AI-voice-generates-images./issues
+- 邮箱联系：puchengxi_2026@user.noreply.gitee.com
 
 ---
 
