@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五哥生图</title>
+<script src="https://cdn.tailwindcss.com" onerror="document.body.innerHTML='<div style=display:flex;align-items:center;justify-content:center;height:100vh;background:#0F172A;color:#F8FAFC;font-family:sans-serif><div style=text-align:center><h2 style=margin-bottom:8px>样式加载失败</h2><p style=color:#94A3B8;font-size:14px>请检查网络连接后刷新页面</p></div></div>'"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#0F172A',
+        surface: '#1E293B',
+        card: '#253349',
+        'card-hover': '#2D3F59',
+        border: '#334155',
+        'border-light': '#475569',
+        muted: '#94A3B8',
+        accent: '#22C55E',
+        'accent-hover': '#4ADE80',
+        'accent-soft': 'rgba(34,197,94,0.12)',
+        danger: '#F43F5E',
+        success: '#22C55E',
+      },
+      fontFamily: {
+        display: ['"PingFang SC"', '"Microsoft YaHei"', '"Noto Sans SC"', 'sans-serif'],
+        body: ['"PingFang SC"', '"Microsoft YaHei"', '"Noto Sans SC"', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100vh;height:100dvh;overflow:hidden}
+body{font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;background:#0F172A;color:#F8FAFC}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:#475569}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-dot{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes glow{0%,100%{box-shadow:0 0 8px rgba(34,197,94,.2)}50%{box-shadow:0 0 20px rgba(34,197,94,.4)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media(max-width:640px){
+  .input-bar-inner{padding:8px 12px}
+  .input-bar-inner .model-row{margin-bottom:6px;gap:4px}
+  .input-bar-inner .model-row .model-btn{padding:3px 8px}
+  .input-bar-inner .model-row .model-btn div:first-child{font-size:10px}
+  .input-bar-inner .model-row .model-btn div:last-child{font-size:7px}
+  .input-bar-inner .input-row{gap:6px}
+  .input-bar-inner .input-row .upload-btn{width:36px;height:36px;border-radius:14px}
+  .input-bar-inner .input-row .voice-btn{width:36px;height:36px;border-radius:14px}
+  .input-bar-inner .input-row textarea{font-size:14px;padding:8px 40px 8px 12px;border-radius:16px}
+  .input-bar-inner .input-row .send-btn{width:30px;height:30px;border-radius:10px;right:3px;bottom:3px}
+  .input-bar-inner .input-hint{display:none}
+  .input-bar-inner select{font-size:10px;padding:2px 20px 2px 6px}
+}
+.msg-enter{animation:slideUp .35s cubic-bezier(.16,1,.3,1) forwards}
+.typing-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:#22C55E;margin:0 2px;animation:pulse-dot 1.4s ease-in-out infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+.shimmer-bg{background:linear-gradient(90deg,#253349 25%,#334155 50%,#253349 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+.lightbox-overlay{opacity:0;pointer-events:none;transition:opacity .25s ease}
+.lightbox-overlay.open{opacity:1;pointer-events:all}
+.img-preview-container{transform-origin:center;transition:none;cursor:grab;user-select:none;-webkit-user-drag:none}
+.img-preview-container.dragging{cursor:grabbing}
+textarea{resize:none;field-sizing:content;max-height:120px}
+.glass{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.hist-item{transition:all .15s;cursor:pointer}
+.hist-item:hover{background:#253349}
+.hist-item.active{background:#253349;border-left:2px solid #22C55E}
+.send-btn{transition:all .15s}
+.send-btn:hover{transform:scale(1.06);box-shadow:0 0 14px rgba(34,197,94,.3)}
+.send-btn:active{transform:scale(.94)}
+.upload-btn{transition:all .15s}
+.upload-btn:hover{border-color:#22C55E;background:rgba(34,197,94,.06);transform:scale(1.04)}
+.ref-chip{position:relative;width:48px;height:48px;border-radius:10px;overflow:hidden;border:1.5px solid #334155;flex-shrink:0;transition:all .15s}
+.ref-chip:hover{border-color:#22C55E}
+.ref-chip img{width:100%;height:100%;object-fit:cover}
+.ref-chip .del{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s}
+.ref-chip:hover .del{opacity:1}
+.gallery-item{border-radius:10px;overflow:hidden;border:1.5px solid #334155;transition:all .2s;cursor:pointer}
+.gallery-item:hover{border-color:#22C55E;transform:scale(1.03)}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-20px);padding:10px 24px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:all .3s cubic-bezier(.16,1,.3,1);pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:#F43F5E;color:white}
+.toast.success{background:#22C55E;color:#0F172A}
+/* 语音输入按钮 */
+.voice-btn{transition:all .15s;position:relative}
+.voice-btn:hover{border-color:#22C55E;background:rgba(34,197,94,.06);transform:scale(1.04)}
+.voice-btn.recording{border-color:#F43F5E;background:rgba(244,63,94,.12);animation:voice-glow 1.2s ease-in-out infinite}
+.voice-btn.recording svg{color:#F43F5E}
+@keyframes voice-glow{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.3)}50%{box-shadow:0 0 16px 4px rgba(244,63,94,.25)}}
+@keyframes voice-pulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.2);opacity:0}}
+.voice-pulse-ring{position:absolute;inset:-4px;border-radius:inherit;border:2px solid #F43F5E;animation:voice-pulse 1.2s ease-out infinite;pointer-events:none;display:none}
+.voice-btn.recording .voice-pulse-ring{display:block}
+.voice-status-bar{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:8px;padding:4px 12px;background:rgba(244,63,94,.9);color:white;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
+.voice-btn.recording .voice-status-bar{opacity:1}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px}
+.sidebar-toggle{display:none}
+@media(max-width:1023px){
+  .sidebar-toggle{display:flex}
+  #leftSidebar{display:flex;position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-100%);transition:transform .3s cubic-bezier(.16,1,.3,1);width:260px;box-shadow:none}
+  #leftSidebar.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.5)}
+  #rightSidebar{display:flex;position:fixed;right:0;top:0;bottom:0;z-index:60;transform:translateX(100%);transition:transform .3s cubic-bezier(.16,1,.3,1);width:260px;box-shadow:none}
+  #rightSidebar.open{transform:translateX(0);box-shadow:-4px 0 24px rgba(0,0,0,.5)}
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}
+  .sidebar-backdrop.show{display:block}
+  .model-btn{font-size:11px;padding:4px 10px}
+  .model-btn div:last-child{font-size:8px}
+  .model-btn div:first-child{font-size:11px}
+}
+</style>
+</head>
+<body class="flex" style="height:100vh;height:100dvh">
+
+<div id="toast" class="toast"></div>
+<div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeSidebars()"></div>
+
+<!-- SVG sprite (hidden) -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777Zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
+<symbol id="i-panel-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></symbol>
+<symbol id="i-panel-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></symbol>
+<symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+<symbol id="i-image-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+<symbol id="i-images" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 22H4a2 2 0 0 1-2-2V6"/><path d="m22 13-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18"/><rect width="16" height="16" x="6" y="2" rx="2"/><circle cx="14" cy="10" r="2"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-maximize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+</svg>
+
+<!-- Left Sidebar -->
+<aside id="leftSidebar" class="w-[272px] bg-surface border-r border-border flex flex-col flex-shrink-0">
+  <div class="p-4 border-b border-border">
+    <div class="flex items-center gap-2.5 mb-4">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-accent to-emerald-400 flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4 text-bg"><use href="#i-sparkles" stroke="#0F172A"/></svg>
+      </div>
+      <span class="font-display font-700 text-base">五哥生图</span>
+      <span id="keyStatus" class="w-2 h-2 rounded-full bg-danger flex-shrink-0 ml-auto" title="API 密钥未设置"></span>
+    </div>
+    <button onclick="newChat()" class="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-bg font-display font-600 text-sm py-2.5 rounded-xl transition-colors cursor-pointer">
+      <svg class="w-4 h-4"><use href="#i-plus"/></svg>
+      新建对话
+    </button>
+  </div>
+  <div class="flex-1 overflow-y-auto p-2">
+    <div class="text-[10px] text-muted font-semibold uppercase tracking-wider px-2 py-2">对话历史</div>
+    <div id="historyList" class="space-y-0.5"></div>
+  </div>
+  <div class="p-3 border-t border-border space-y-2">
+    <button onclick="showKeyModal()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted hover:text-white hover:bg-card transition-colors cursor-pointer">
+      <svg class="w-3.5 h-3.5"><use href="#i-key"/></svg>
+      <span>API 密钥设置</span>
+      <span id="keyBadge" class="ml-auto w-1.5 h-1.5 rounded-full bg-danger"></span>
+    </button>
+    <button onclick="exportChat()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted hover:text-accent hover:bg-card transition-colors cursor-pointer">
+      <svg class="w-3.5 h-3.5"><use href="#i-download"/></svg>
+      <span>导出当前对话</span>
+    </button>
+    <button onclick="clearAllHistory()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted hover:text-danger hover:bg-card transition-colors cursor-pointer">
+      <svg class="w-3.5 h-3.5"><use href="#i-trash"/></svg>
+      <span>清空所有历史</span>
+    </button>
+  </div>
+</aside>
+
+<!-- Center -->
+<main class="flex-1 flex flex-col min-w-0">
+  <header class="flex items-center justify-between px-4 h-[50px] border-b border-border bg-bg/50 glass flex-shrink-0 z-10">
+    <div class="flex items-center gap-2">
+      <button onclick="toggleLeftSidebar()" class="sidebar-toggle w-8 h-8 rounded-lg hover:bg-card items-center justify-center cursor-pointer">
+        <svg class="w-4 h-4 text-muted"><use href="#i-panel-left"/></svg>
+      </button>
+      <div class="flex items-center gap-2 lg:hidden">
+        <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-accent to-emerald-400 flex items-center justify-center">
+          <svg class="w-3 h-3 text-bg"><use href="#i-sparkles" stroke="#0F172A"/></svg>
+        </div>
+        <span class="font-display font-700 text-sm">五哥生图</span>
+      </div>
+    </div>
+    <button onclick="toggleRightSidebar()" class="sidebar-toggle w-8 h-8 rounded-lg hover:bg-card items-center justify-center cursor-pointer">
+      <svg class="w-4 h-4 text-muted"><use href="#i-panel-right"/></svg>
+    </button>
+  </header>
+
+  <div id="chatArea" class="flex-1 overflow-y-auto">
+    <div id="chatMessages" class="max-w-2xl mx-auto px-4 py-6 space-y-5">
+      <div id="emptyState"></div>
+    </div>
+  </div>
+
+  <div class="flex-shrink-0 border-t border-border bg-bg/50 glass">
+    <div class="max-w-2xl mx-auto px-4 py-3 input-bar-inner">
+      <div class="flex items-center gap-2 mb-2.5 overflow-x-auto pb-0.5 model-row" style="-webkit-overflow-scrolling:touch">
+        <button class="model-btn cursor-pointer px-3 py-1.5 rounded-lg text-xs font-semibold border-1.5 transition-all text-center leading-tight" data-model="image_gpt" onclick="switchModel('image_gpt')"><div>GPT</div><div class="text-[9px] font-normal opacity-70">0.1元/张 · 不支持本地图</div></button>
+        <button class="model-btn cursor-pointer px-3 py-1.5 rounded-lg text-xs font-semibold border-1.5 transition-all text-center leading-tight" data-model="image_nanoBanana_pro" onclick="switchModel('image_nanoBanana_pro')"><div>NanoBanana Pro</div><div class="text-[9px] font-normal opacity-70">0.3元/张</div></button>
+        <div class="w-px h-5 bg-border flex-shrink-0"></div>
+        <select id="sizeSelect" onchange="saveParams()" class="bg-card/50 border border-transparent hover:border-border rounded-lg px-2 py-1 text-[11px] text-muted outline-none cursor-pointer hover:text-white transition-colors font-semibold"></select>
+        <select id="aspectRatioSelect" onchange="saveParams()" class="bg-card/50 border border-transparent hover:border-border rounded-lg px-2 py-1 text-[11px] text-muted outline-none cursor-pointer hover:text-white transition-colors font-semibold hidden"></select>
+      </div>
+      <div id="refPreview" class="flex gap-2 mb-2 flex-wrap"></div>
+      <div id="urlInputRow" class="hidden items-center gap-2 mb-2 bg-card border border-border rounded-xl px-3 py-2">
+        <svg class="w-3.5 h-3.5 text-muted flex-shrink-0"><use href="#i-link"/></svg>
+        <input id="urlInputField" type="url" placeholder="粘贴图片 URL，按 Enter 添加" class="flex-1 bg-transparent text-xs text-white placeholder-muted outline-none">
+        <button onclick="addUrlRef()" class="text-[10px] text-accent hover:text-accent-hover font-semibold cursor-pointer flex-shrink-0">添加</button>
+        <button onclick="hideUrlInput()" class="text-muted hover:text-white cursor-pointer flex-shrink-0"><svg class="w-3 h-3"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="flex items-end gap-2 input-row">
+        <div class="flex-1 relative">
+          <textarea id="promptInput" rows="1" placeholder="描述你想生成的图片..." class="w-full bg-card border border-border rounded-2xl px-4 py-2.5 pr-12 text-sm text-white placeholder-muted outline-none focus:border-accent/50 transition-colors leading-relaxed" onkeydown="handleKeyDown(event)"></textarea>
+          <button onclick="sendMessage()" class="send-btn absolute right-2 bottom-2 w-8 h-8 rounded-xl bg-accent hover:bg-accent-hover flex items-center justify-center cursor-pointer">
+            <svg class="w-4 h-4" stroke="#0F172A"><use href="#i-arrow-up"/></svg>
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button onclick="toggleVoiceInput()" id="voiceBtn" class="voice-btn upload-btn w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center cursor-pointer group" title="语音输入">
+            <span class="voice-pulse-ring"></span>
+            <span class="voice-status-bar" id="voiceStatus">正在聆听...</span>
+            <svg id="voiceIcon" class="w-4 h-4 text-muted group-hover:text-accent transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" x2="12" y1="19" y2="22"/>
+            </svg>
+          </button>
+          <button onclick="toggleUrlInput()" class="upload-btn w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center cursor-pointer group" title="添加图片 URL">
+            <svg class="w-4 h-4 text-muted group-hover:text-accent transition-colors"><use href="#i-link"/></svg>
+          </button>
+          <button onclick="triggerFileUpload()" class="upload-btn w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center cursor-pointer group" title="上传本地图片（GPT 不支持，需使用 NanoBanana Pro）">
+            <svg class="w-4 h-4 text-muted group-hover:text-accent transition-colors"><use href="#i-image-plus"/></svg>
+          </button>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" multiple class="hidden" onchange="handleFileUpload(event)">
+      </div>
+      <div class="text-center mt-1.5 input-hint">
+        <span class="text-[10px] text-muted/30">Enter 发送 · Ctrl+Enter 换行 · 点击🎤语音输入（需Chrome+可访问Google）</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Right Sidebar -->
+<aside id="rightSidebar" class="w-[272px] bg-surface border-l border-border flex flex-col flex-shrink-0">
+  <div class="p-4 border-b border-border">
+    <div class="flex items-center gap-2">
+      <svg class="w-4 h-4 text-accent"><use href="#i-images"/></svg>
+      <span class="font-display font-600 text-sm">图片画廊</span>
+      <span id="galleryCount" class="text-[10px] text-muted">0 张</span>
+      <span id="cacheStatus" class="text-[10px] text-accent/40 hidden"></span>
+      <span class="flex-1"></span>
+      <button onclick="batchDownload()" class="w-7 h-7 rounded-lg hover:bg-card flex items-center justify-center cursor-pointer text-muted hover:text-accent transition-colors" title="批量下载所有图片"><svg class="w-3.5 h-3.5"><use href="#i-download"/></svg></button>
+    </div>
+  </div>
+  <div id="galleryGrid" class="flex-1 overflow-y-auto p-3">
+    <div id="galleryEmpty" class="flex flex-col items-center justify-center py-16 text-center">
+      <svg class="w-8 h-8 text-border mb-3"><use href="#i-image"/></svg>
+      <p class="text-xs text-muted/50">生成的图片将显示在这里</p>
+    </div>
+  </div>
+</aside>
+
+<!-- Drag Overlay -->
+<div id="dragOverlay" class="hidden fixed inset-0 bg-bg/85 z-50 flex items-center justify-center" style="backdrop-filter:blur(4px)">
+  <div class="border-2 border-dashed border-accent/50 rounded-2xl p-12 text-center">
+    <svg class="w-12 h-12 text-accent mx-auto mb-3"><use href="#i-image-plus"/></svg>
+    <div class="text-lg font-display font-600">释放以添加参考图</div>
+    <div class="text-sm text-muted mt-1">支持 JPG、PNG、WebP</div>
+  </div>
+</div>
+
+<!-- Key Modal -->
+<div id="keyModal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center" style="display:none;backdrop-filter:blur(6px)" onclick="closeKeyModal(event)">
+  <div class="bg-surface border border-border rounded-2xl w-full max-w-sm mx-4 p-6 shadow-2xl" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-display font-600 text-lg">API 密钥配置</h3>
+      <button onclick="hideKeyModal()" class="w-8 h-8 rounded-lg hover:bg-card flex items-center justify-center cursor-pointer"><svg class="w-4 h-4 text-muted"><use href="#i-x"/></svg></button>
+    </div>
+    <p class="text-sm text-muted mb-5">密钥将保存在浏览器本地。</p>
+    <div class="relative mb-5">
+      <input id="apiKeyInput" type="password" placeholder="粘贴你的 API 密钥..." class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-white placeholder-muted outline-none focus:border-accent/50 transition-colors pr-11">
+      <button onclick="toggleKeyVis()" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white cursor-pointer" id="eyeBtn"><svg class="w-4 h-4" id="eyeIconEl"><use href="#i-eye-off"/></svg></button>
+    </div>
+    <button onclick="saveKeyAndClose()" class="w-full bg-accent hover:bg-accent-hover text-bg font-display font-600 text-sm py-3 rounded-xl transition-colors cursor-pointer">保存密钥</button>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox-overlay fixed inset-0 z-[100] bg-black/95 flex flex-col">
+  <div class="flex items-center justify-between px-4 h-11 flex-shrink-0 z-10">
+    <div class="text-sm text-white/50 font-display" id="lbCounter">1 / 1</div>
+    <div class="flex items-center gap-1">
+      <button onclick="lbResetZoom()" class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer"><svg class="w-3.5 h-3.5"><use href="#i-maximize"/></svg></button>
+      <span id="zoomLevel" class="text-[11px] text-white/30 w-10 text-center tabular-nums">100%</span>
+      <button onclick="lbDownload()" class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer"><svg class="w-3.5 h-3.5"><use href="#i-download"/></svg></button>
+      <button onclick="closeLightbox()" class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer"><svg class="w-3.5 h-3.5"><use href="#i-x"/></svg></button>
+    </div>
+  </div>
+  <div id="lbCanvas" class="flex-1 overflow-hidden relative cursor-crosshair" onmousedown="lbMouseDown(event)" onwheel="lbWheel(event)">
+    <img id="lbImg" class="img-preview-container absolute" draggable="false" ondblclick="lbDblClick()">
+  </div>
+  <div class="flex items-center justify-center gap-4 h-11 flex-shrink-0 z-10">
+    <button onclick="lbPrev()" class="w-8 h-8 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center text-white transition-colors cursor-pointer"><svg class="w-4 h-4"><use href="#i-chevron-left"/></svg></button>
+    <button onclick="lbNext()" class="w-8 h-8 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center text-white transition-colors cursor-pointer"><svg class="w-4 h-4"><use href="#i-chevron-right"/></svg></button>
+  </div>
+</div>
+
+<script>
+const API_BASE='https://api.wuyinkeji.com/api/async';
+
+// Firefox 不支持 field-sizing:content，用 JS 自动增高
+(function autoResize(){
+  const ta=document.getElementById('promptInput');if(!ta)return setTimeout(autoResize,100);
+  if(!CSS.supports('field-sizing','content'))ta.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'});
+})();
+let currentModel=localStorage.getItem('ai_model')||'image_gpt';
+let refImages=[];
+let pollingTimers={};let activeTimerIntervals={};
+let chatHistory=[];
+let allImages=[];
+let currentChatIdx=-1;
+let lbImgs=[],lbIdx=0,lbS=1,lbX=0,lbY=0,lbDrag=false,lbDS={x:0,y:0,ox:0,oy:0},lbBUrl=null;
+
+const imgCache={db:null,
+  open(){return new Promise((res,rej)=>{const r=indexedDB.open('wuge_img_cache',1);r.onupgradeneeded=e=>e.target.result.createObjectStore('imgs');r.onsuccess=e=>{imgCache.db=e.target.result;res()};r.onerror=e=>rej(e.target.error)})},
+  put(url,blob){return new Promise((res,rej)=>{if(!imgCache.db){res();return}const tx=imgCache.db.transaction('imgs','readwrite');tx.objectStore('imgs').put(blob,url);tx.oncomplete=()=>res();tx.onerror=e=>rej(e.target.error)})},
+  get(url){return new Promise((res,rej)=>{if(!imgCache.db){res(null);return}const tx=imgCache.db.transaction('imgs','readonly');const r=tx.objectStore('imgs').get(url);r.onsuccess=()=>res(r.result||null);r.onerror=e=>rej(e.target.error)})},
+  count(){return new Promise((res,rej)=>{if(!imgCache.db){res(0);return}const tx=imgCache.db.transaction('imgs','readonly');const r=tx.objectStore('imgs').count();r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e.target.error)})},
+  clear(){return new Promise((res,rej)=>{if(!imgCache.db){res();return}const tx=imgCache.db.transaction('imgs','readwrite');tx.objectStore('imgs').clear();tx.oncomplete=()=>res();tx.onerror=e=>rej(e.target.error)})},
+  del(url){return new Promise((res,rej)=>{if(!imgCache.db){res();return}const tx=imgCache.db.transaction('imgs','readwrite');tx.objectStore('imgs').delete(url);tx.oncomplete=()=>res();tx.onerror=e=>rej(e.target.error)})},
+  cachedUrl(url){return imgCache.get(url).then(blob=>blob?URL.createObjectURL(blob):url).catch(()=>url)}
+};
+function cacheImage(url){fetch(url).then(r=>r.blob()).then(blob=>imgCache.put(url,blob)).catch(()=>{})}
+function resolveImgUrl(url){return imgCache.cachedUrl(url)}
+const PH='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect fill="#253349" width="400" height="400"/></svg>');
+function applyCachedImages(container){if(!container)return;container.querySelectorAll('img[data-src]').forEach(img=>{const src=img.getAttribute('data-src');resolveImgUrl(src).then(u=>{if(img._blobUrl)URL.revokeObjectURL(img._blobUrl);img._blobUrl=u!==src?u:null;img.src=u})})}
+
+initApp();
+
+function getHistory(){try{return JSON.parse(localStorage.getItem('ai_chats')||'[]')}catch(e){return[]}}
+function saveHistory(h){try{localStorage.setItem('ai_chats',JSON.stringify(h))}catch(e){}}
+function getImages(){try{return JSON.parse(localStorage.getItem('ai_all_images')||'[]')}catch(e){return[]}}
+function saveImages(imgs){try{localStorage.setItem('ai_all_images',JSON.stringify(imgs))}catch(e){}}
+
+function initApp(){
+  imgCache.open().catch(()=>{});
+  loadKey();switchModel(currentModel);
+  chatHistory=getHistory();allImages=getImages();
+  if(chatHistory.length>0){currentChatIdx=chatHistory.length-1;renderCurrentChat()}
+  else{renderEmptyState()}
+  renderHistoryList();renderGallery();
+}
+
+function getApiKey(){return document.getElementById('apiKeyInput').value.trim()}
+function loadKey(){const k=localStorage.getItem('ai_img_key')||'';document.getElementById('apiKeyInput').value=k;updateKeyStatus()}
+function saveKeyAndClose(){const k=getApiKey();if(k){localStorage.setItem('ai_img_key',k);updateKeyStatus();hideKeyModal();toast('密钥已保存','success')}else{toast('请输入密钥','error')}}
+function updateKeyStatus(){const dot=document.getElementById('keyStatus'),badge=document.getElementById('keyBadge'),has=!!getApiKey();dot.className='w-2 h-2 rounded-full flex-shrink-0 ml-auto '+(has?'bg-success':'bg-danger');if(badge)badge.className='ml-auto w-1.5 h-1.5 rounded-full '+(has?'bg-success':'bg-danger')}
+function toggleKeyVis(){const inp=document.getElementById('apiKeyInput'),icon=document.getElementById('eyeIconEl');if(inp.type==='password'){inp.type='text';icon.innerHTML='<use href="#i-eye"/>'}else{inp.type='password';icon.innerHTML='<use href="#i-eye-off"/>'}}
+function showKeyModal(){document.getElementById('keyModal').style.display='flex';if(!getApiKey())document.getElementById('apiKeyInput').focus()}
+function hideKeyModal(){document.getElementById('keyModal').style.display='none'}
+function closeKeyModal(e){if(e.target===e.currentTarget)hideKeyModal()}
+
+function switchModel(m){currentModel=m;localStorage.setItem('ai_model',m);document.querySelectorAll('.model-btn[data-model]').forEach(el=>{const a=el.dataset.model===m;el.style.background=a?'rgba(34,197,94,.12)':'';el.style.border=a?'1.5px solid rgba(34,197,94,.4)':'1.5px solid transparent';el.style.color=a?'#4ADE80':'#94A3B8'});updateSizeOpts()}
+function saveParams(){}
+
+function updateSizeOpts(){
+  const sel=document.getElementById('sizeSelect'),ar=document.getElementById('aspectRatioSelect');sel.innerHTML='';
+  if(currentModel==='image_gpt'){ar.classList.add('hidden');[['auto','比例: 自动'],['1:1','1:1'],['3:2','3:2'],['2:3','2:3'],['16:9','16:9'],['9:16','9:16'],['4:3','4:3'],['3:4','3:4'],['21:9','21:9'],['9:21','9:21'],['1:3','1:3'],['3:1','3:1'],['2:1','2:1'],['1:2','1:2']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o)})}
+  else{ar.classList.remove('hidden');[['1K','1K'],['2K','2K'],['4K','4K']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o)});ar.innerHTML='';[['auto','比例: 自动'],['1:1','1:1'],['16:9','16:9'],['9:16','9:16'],['4:3','4:3'],['3:4','3:4'],['3:2','3:2'],['2:3','2:3'],['5:4','5:4'],['4:5','4:5'],['21:9','21:9']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;ar.appendChild(o)})}
+}
+
+function renderEmptyState(){
+  const el=document.getElementById('emptyState');if(!el)return;
+  el.innerHTML=`<div class="msg-enter text-center py-16"><div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-emerald-400/5 flex items-center justify-center mx-auto mb-5" style="animation:float 3s ease-in-out infinite"><svg class="w-7 h-7 text-accent"><use href="#i-sparkles"/></svg></div><h2 class="font-display font-700 text-xl mb-2">欢迎使用五哥生图</h2><p class="text-muted text-sm leading-relaxed mb-6 max-w-xs mx-auto">输入提示词，AI 为你生成创意图片。</p><div class="flex flex-wrap justify-center gap-2">
+        <button onclick="useExample('A majestic phoenix rising from golden flames, its feathers made of molten gold and crystalline fire, against a backdrop of a starry nebula, hyper-realistic digital painting, volumetric lighting, 8K detail')" class="px-4 py-1.5 text-xs rounded-full bg-card border border-border text-muted hover:text-white hover:border-accent/40 transition-all cursor-pointer font-semibold">浴火凤凰</button>
+        <button onclick="useExample('An ancient Chinese celestial palace floating among clouds, golden rooftops glowing in sunset light, surrounded by mythical cranes and dragons, ink wash painting style blended with ultra-realistic rendering, cinematic atmosphere')" class="px-4 py-1.5 text-xs rounded-full bg-card border border-border text-muted hover:text-white hover:border-accent/40 transition-all cursor-pointer font-semibold">天宫仙境</button>
+        <button onclick="useExample('Portrait of a cyberpunk geisha with holographic cherry blossom petals falling around her, neon-lit Tokyo street at night reflecting in rain puddles, intricate kimono with LED circuits, shot on Hasselblad, shallow depth of field, photorealistic')" class="px-4 py-1.5 text-xs rounded-full bg-card border border-border text-muted hover:text-white hover:border-accent/40 transition-all cursor-pointer font-semibold">赛博艺伎</button>
+        <button onclick="useExample('A colossal ancient tree growing through a ruined gothic cathedral, bioluminescent moss and glowing crystal formations, god rays piercing through stained glass windows, epic scale, fantasy concept art, dramatic perspective, trending on ArtStation')" class="px-4 py-1.5 text-xs rounded-full bg-card border border-border text-muted hover:text-white hover:border-accent/40 transition-all cursor-pointer font-semibold">神圣遗迹</button>
+        <button onclick="useExample('Macro photography of a tiny fairy sitting on a dewdrop-covered spider web at sunrise, wings shimmering with iridescent colors, bokeh background of enchanted forest, hyper-detailed textures, National Geographic quality')" class="px-4 py-1.5 text-xs rounded-full bg-card border border-border text-muted hover:text-white hover:border-accent/40 transition-all cursor-pointer font-semibold">晨露精灵</button>
+        <button onclick="useExample('A futuristic mech warrior standing in a post-apocalyptic field of giant flowers, sunset casting long shadows, weathered armor with floral patterns growing on it, Studio Ghibli meets H.R. Giger aesthetic, masterpiece illustration')" class="px-4 py-1.5 text-xs rounded-full bg-card border border-border text-muted hover:text-white hover:border-accent/40 transition-all cursor-pointer font-semibold">废土机甲</button>
+      </div></div>`;
+}
+
+function renderHistoryList(){
+  const list=document.getElementById('historyList');
+  if(!chatHistory.length){list.innerHTML='<div class="px-3 py-6 text-center text-xs text-muted/40">暂无对话</div>';return}
+  list.innerHTML=chatHistory.map((chat,i)=>{
+    const active=i===currentChatIdx;const preview=chat.messages.length?chat.messages[chat.messages.length-1].prompt.substring(0,30):'新对话';const time=new Date(chat.time).toLocaleDateString('zh-CN',{month:'short',day:'numeric'});const imgCount=chat.messages.reduce((a,m)=>a+(m.images?m.images.length:0),0);
+    return `<div class="hist-item flex items-center gap-2 px-3 py-2.5 rounded-lg ${active?'active':''}" onclick="switchChat(${i})"><div class="flex-1 min-w-0"><div class="text-xs text-white/80 truncate">${esc(preview)}</div><div class="text-[10px] text-muted/50 mt-0.5">${time}${imgCount?' · '+imgCount+'张':''}</div></div><button onclick="event.stopPropagation();deleteChat(${i})" class="w-5 h-5 rounded flex items-center justify-center text-muted/30 hover:text-danger cursor-pointer flex-shrink-0" style="opacity:0" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
+  }).join('');
+}
+
+function switchChat(i){cleanupTimers();currentChatIdx=i;renderCurrentChat();renderHistoryList()}
+function deleteChat(i){cleanupTimers();const del=chatHistory[i];chatHistory.splice(i,1);if(del)del.messages.forEach(m=>{if(m.images)m.images.forEach(url=>imgCache.del(url).catch(()=>{}))});if(currentChatIdx>=chatHistory.length)currentChatIdx=chatHistory.length-1;saveHistory(chatHistory);renderHistoryList();if(currentChatIdx>=0)renderCurrentChat();else{document.getElementById('chatMessages').innerHTML='<div id="emptyState"></div>';renderEmptyState()}rebuildGallery()}
+function newChat(){cleanupTimers();refImages=[];renderRefPreview();currentChatIdx=-1;renderHistoryList();document.getElementById('chatMessages').innerHTML='<div id="emptyState"></div>';renderEmptyState()}
+function clearAllHistory(){cleanupTimers();if(!confirm('确定清空所有历史记录？'))return;chatHistory=[];allImages=[];saveHistory(chatHistory);saveImages(allImages);imgCache.clear().catch(()=>{});currentChatIdx=-1;renderHistoryList();renderGallery();document.getElementById('chatMessages').innerHTML='<div id="emptyState"></div>';renderEmptyState()}
+
+function cleanupTimers(){Object.keys(activeTimerIntervals).forEach(k=>{clearInterval(activeTimerIntervals[k]);delete activeTimerIntervals[k]});Object.keys(pollingTimers).forEach(k=>{clearInterval(pollingTimers[k]);delete pollingTimers[k]})}
+
+function renderCurrentChat(){
+  const chat=chatHistory[currentChatIdx];if(!chat)return;const c=document.getElementById('chatMessages');c.innerHTML='';
+  chat.messages.forEach((msg,msgIdx)=>{
+    const d=document.createElement('div');d.className='flex justify-end';
+    let refsH='';if(msg.refs&&msg.refs.length)refsH='<div class="flex gap-1 mt-2 flex-wrap justify-end">'+msg.refs.map(r=>`<div class="w-9 h-9 rounded-lg overflow-hidden border border-border"><img src="${r}" class="w-full h-full object-cover" loading="lazy"></div>`).join('')+'</div>';
+    d.innerHTML=`<div class="max-w-[85%] md:max-w-[65%]"><div class="bg-accent/10 border border-accent/15 rounded-2xl rounded-tr-md px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">${esc(msg.prompt)}</div>${refsH}</div>`;c.appendChild(d);
+    const mName=msg.model==='image_nanoBanana_pro'?'NanoBanana Pro':'GPT';
+    if(msg.images&&msg.images.length){
+      const ad=document.createElement('div');ad.className='flex justify-start';ad.id='msg_'+currentChatIdx+'_'+msgIdx;const ij=JSON.stringify(msg.images),s=ij.replace(/'/g,"\\'").replace(/"/g,'&quot;');let ih;
+      if(msg.images.length===1)ih=`<div class="flex gap-2"><div class="flex-1 relative group"><img src="${PH}" data-src="${msg.images[0]}" class="w-full rounded-xl cursor-pointer hover:brightness-90 transition-all max-h-[420px] object-contain" onclick="openLightbox(${s},0)" loading="lazy"><button onclick="event.stopPropagation();addRefFromUrl('${msg.images[0].replace(/'/g,"\\'")}')" class="absolute bottom-2 right-2 bg-bg/80 hover:bg-accent text-[10px] text-white hover:text-bg font-semibold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" style="backdrop-filter:blur(4px)">用作参考图</button></div><div class="flex flex-col gap-1.5 flex-shrink-0"><button onclick="downloadImg('${msg.images[0].replace(/'/g,"\\'")}')" class="w-9 h-9 rounded-xl bg-card border border-border hover:border-accent hover:bg-accent/10 flex items-center justify-center cursor-pointer transition-all group/dl" title="下载图片"><svg class="w-4 h-4 text-muted group-hover/dl:text-accent transition-colors"><use href="#i-download"/></svg></button></div></div>`;
+      else ih=`<div class="grid grid-cols-2 gap-1.5">`+msg.images.map((x,j)=>`<div class="relative group"><img src="${PH}" data-src="${x}" class="w-full rounded-xl cursor-pointer hover:brightness-90 transition-all aspect-square object-cover" onclick="openLightbox(${s},${j})" loading="lazy"><button onclick="event.stopPropagation();addRefFromUrl('${x.replace(/'/g,"\\'")}')" class="absolute bottom-1 right-1 bg-bg/80 hover:bg-accent text-[9px] text-white hover:text-bg font-semibold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-all cursor-pointer" style="backdrop-filter:blur(4px)">参考</button><button onclick="event.stopPropagation();downloadImg('${x.replace(/'/g,"\\'")}')" class="absolute top-1 right-1 w-7 h-7 rounded-lg bg-bg/80 hover:bg-accent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer" style="backdrop-filter:blur(4px)" title="下载"><svg class="w-3.5 h-3.5 text-white"><use href="#i-download"/></svg></button></div>`).join('')+'</div>';
+      ad.innerHTML=`<div class="max-w-[90%] md:max-w-[75%]"><div class="flex items-center gap-2 mb-1.5"><div class="w-5 h-5 rounded-md bg-gradient-to-br from-accent to-emerald-400 flex items-center justify-center flex-shrink-0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="3"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></div><span class="text-[11px] text-muted font-display">${mName}${msg.elapsed?'<span class="text-accent/50 ml-1.5">· '+msg.elapsed+'s</span>':''}</span></div><div class="bg-card border border-border rounded-2xl rounded-tl-md px-2.5 py-2.5">${ih}</div></div>`;c.appendChild(ad);
+    }else if(msg.error){
+      const ad=document.createElement('div');ad.className='flex justify-start';
+      ad.innerHTML=`<div class="max-w-[90%] md:max-w-[75%]"><div class="flex items-center gap-2 mb-1.5"><div class="w-5 h-5 rounded-md bg-gradient-to-br from-accent to-emerald-400 flex items-center justify-center flex-shrink-0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="3"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></div><span class="text-[11px] text-muted font-display">${mName}</span></div><div class="bg-card border border-border rounded-2xl rounded-tl-md px-3 py-2.5"><div class="flex items-start gap-2 text-danger text-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${esc(msg.error)}</span></div></div></div>`;c.appendChild(ad);
+    }
+  });
+  requestAnimationFrame(()=>{document.getElementById('chatArea').scrollTop=document.getElementById('chatArea').scrollHeight});
+  applyCachedImages(document.getElementById('chatMessages'));
+}
+
+function renderGallery(){
+  const grid=document.getElementById('galleryGrid'),cnt=document.getElementById('galleryCount'),cs=document.getElementById('cacheStatus');cnt.textContent=allImages.length+' 张';
+  imgCache.count().then(n=>{if(n>0){cs.textContent='已缓存 '+n+' 张';cs.classList.remove('hidden')}else cs.classList.add('hidden')});
+  if(!allImages.length){grid.innerHTML='<div class="flex flex-col items-center justify-center py-16 text-center"><svg class="w-8 h-8 text-border mb-3"><use href="#i-image"/></svg><p class="text-xs text-muted/50">生成的图片将显示在这里</p></div>';return}
+  grid.innerHTML=`<div class="grid grid-cols-2 gap-2">${allImages.map((item,i)=>{
+    const u=typeof item==='string'?item:item.url;
+    const ci=typeof item==='string'?-1:item.chatIdx;
+    const mi=typeof item==='string'?-1:item.msgIdx;
+    const click=ci>=0?`onclick="scrollToMsg(${ci},${mi})"`:`onclick="openLightbox(${JSON.stringify(allImages.map(x=>typeof x==='string'?x:x.url)).replace(/'/g,"\\'").replace(/"/g,'&quot;')},${i})"`;
+    return `<div class="gallery-item relative group" ${click}><img src="${PH}" data-src="${u}" class="w-full aspect-square object-cover" loading="lazy"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center"><svg class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" style="filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))"><use href="#i-maximize"/></svg></div><button onclick="event.stopPropagation();addRefFromUrl('${u.replace(/'/g,"\\'")}')" class="absolute bottom-1.5 left-1.5 right-1.5 bg-bg/80 hover:bg-accent text-[10px] text-white hover:text-bg font-semibold py-1 rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" style="backdrop-filter:blur(4px)">用作参考图</button></div>`;
+  }).join('')}</div>`;
+  applyCachedImages(grid);
+}
+
+function rebuildGallery(){allImages=[];chatHistory.forEach((chat,ci)=>chat.messages.forEach((m,mi)=>{if(m.images)m.images.forEach(url=>allImages.push({url,chatIdx:ci,msgIdx:mi}))}));saveImages(allImages);renderGallery()}
+
+function scrollToMsg(chatIdx,msgIdx){
+  if(chatIdx!==currentChatIdx){cleanupTimers();currentChatIdx=chatIdx;renderCurrentChat();renderHistoryList()}
+  requestAnimationFrame(()=>{const el=document.getElementById('msg_'+chatIdx+'_'+msgIdx);if(el)el.scrollIntoView({behavior:'smooth',block:'center'})});
+}
+
+function triggerFileUpload(){document.getElementById('fileInput').click()}
+function addRefFromUrl(url){refImages.push({type:'url',value:url,name:'参考图'});renderRefPreview();toast('已添加为参考图','success')}
+
+function downloadImg(url){imgCache.get(url).then(blob=>{if(blob){const a=document.createElement('a');const bUrl=URL.createObjectURL(blob);a.href=bUrl;a.download='wuge-'+Date.now()+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(bUrl),1000)}else{fetch(url).then(r=>r.blob()).then(b=>{const a=document.createElement('a');const bUrl=URL.createObjectURL(b);a.href=bUrl;a.download='wuge-'+Date.now()+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(bUrl),1000)}).catch(()=>window.open(url,'_blank'))}}).catch(()=>window.open(url,'_blank'))}
+
+function toggleUrlInput(){const row=document.getElementById('urlInputRow');row.classList.toggle('hidden');if(!row.classList.contains('hidden'))document.getElementById('urlInputField').focus()}
+function hideUrlInput(){document.getElementById('urlInputRow').classList.add('hidden')}
+function addUrlRef(){const inp=document.getElementById('urlInputField'),url=inp.value.trim();if(!url)return;refImages.push({type:'url',value:url,name:'URL'});inp.value='';renderRefPreview()}
+document.getElementById('urlInputField').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addUrlRef()}});
+function compressImage(file,maxW=768,quality=0.5){
+  return new Promise(resolve=>{
+    const r=new FileReader();r.onload=ev=>{
+      const img=new Image();img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxW||h>maxW){if(w>h){h=Math.round(h*maxW/w);w=maxW}else{w=Math.round(w*maxW/h);h=maxW}}
+        const c=document.createElement('canvas');c.width=w;c.height=h;
+        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',quality));
+      };img.src=ev.target.result;
+    };r.readAsDataURL(file);
+  });
+}
+function handleFileUpload(e){const files=Array.from(e.target.files);files.forEach(f=>{compressImage(f).then(data=>{refImages.push({type:'base64',value:data,name:f.name});renderRefPreview()})});e.target.value=''}
+function removeRefImage(i){refImages.splice(i,1);renderRefPreview()}
+function renderRefPreview(){const c=document.getElementById('refPreview');if(!refImages.length){c.innerHTML='';return}c.innerHTML=refImages.map((img,i)=>`<div class="ref-chip"><img src="${img.value}" alt=""><div class="del" onclick="removeRefImage(${i})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div>`).join('')}
+
+function handleKeyDown(e){if(e.key==='Enter'&&!e.ctrlKey){e.preventDefault();sendMessage()}else if(e.key==='Enter'&&e.ctrlKey){e.preventDefault();const ta=e.target,s=ta.selectionStart,en=ta.selectionEnd;ta.value=ta.value.substring(0,s)+'\n'+ta.value.substring(en);ta.selectionStart=ta.selectionEnd=s+1}}
+
+/* ===== 语音输入功能 ===== */
+let voiceRecognition = null;
+let isRecording = false;
+let voiceNetworkFailed = false;
+
+const ERROR_MESSAGES = {
+  'network': '🌐 语音服务连接失败：Chrome语音识别需要连接Google服务器。请检查网络连接或使用VPN。',
+  'not-allowed': '🎤 麦克风权限被拒绝：请点击地址栏左侧的锁图标，允许麦克风权限。',
+  'no-speech': '🔇 未检测到语音：请对着麦克风说话。',
+  'audio-capture': '🎤 未检测到麦克风设备：请检查麦克风是否已连接。',
+  'service-not-allowed': '🔒 语音服务不可用：请在浏览器设置中启用语音识别。',
+  'aborted': '',
+};
+
+function showVoiceError(type) {
+  const msg = ERROR_MESSAGES[type] || ('语音识别出错: ' + type);
+  if (!msg) return;
+  // 使用toast显示
+  toast(msg, 'error');
+  // 同时在语音按钮上显示状态
+  const statusEl = document.getElementById('voiceStatus');
+  if (statusEl) {
+    statusEl.textContent = type === 'network' ? '网络不可用' : '识别失败';
+    statusEl.style.opacity = '1';
+    statusEl.style.background = 'rgba(244,63,94,.9)';
+    setTimeout(() => { statusEl.style.opacity = ''; }, 3000);
+  }
+}
+
+function checkVoiceSupport() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    const btn = document.getElementById('voiceBtn');
+    if (btn) {
+      btn.title = '您的浏览器不支持语音识别，请使用Chrome/Edge浏览器';
+      btn.style.opacity = '0.35';
+      btn.style.cursor = 'not-allowed';
+      btn.onclick = () => toast('您的浏览器不支持语音识别，请使用Chrome或Edge浏览器', 'error');
+    }
+    return false;
+  }
+  return true;
+}
+
+function initVoiceRecognition() {
+  if (!checkVoiceSupport()) return null;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'zh-CN';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  let finalTranscript = '';
+  let isManuallyStopped = false;
+  let errorCount = 0;
+
+  recognition.onresult = (event) => {
+    let interimText = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript;
+        errorCount = 0; // 成功识别，重置错误计数
+      } else {
+        interimText += transcript;
+      }
+    }
+    const ta = document.getElementById('promptInput');
+    const baseText = ta.dataset.voiceBase || '';
+    ta.value = baseText + finalTranscript + interimText;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  };
+
+  recognition.onerror = (event) => {
+    const err = event.error;
+    console.warn('语音识别错误:', err);
+
+    if (err === 'aborted') return;
+
+    if (err === 'no-speech') {
+      if (isRecording) {
+        try { recognition.start(); } catch(e) {}
+      }
+      return;
+    }
+
+    if (err === 'network') {
+      errorCount++;
+      if (errorCount >= 2) {
+        // 连续失败，停止重试
+        showVoiceError('network');
+        voiceNetworkFailed = true;
+        stopRecording();
+        return;
+      }
+      // 第一次失败，尝试重试
+      if (isRecording) {
+        try { recognition.start(); } catch(e) {}
+      }
+      return;
+    }
+
+    showVoiceError(err);
+    stopRecording();
+  };
+
+  recognition.onend = () => {
+    if (isRecording && !isManuallyStopped && !voiceNetworkFailed) {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+
+  recognition._isManuallyStopped = () => isManuallyStopped;
+  recognition._setManuallyStopped = (v) => { isManuallyStopped = v; };
+  recognition._getFinalTranscript = () => finalTranscript;
+  recognition._resetFinalTranscript = () => { finalTranscript = ''; errorCount = 0; };
+
+  return recognition;
+}
+
+function toggleVoiceInput() {
+  if (voiceNetworkFailed) {
+    toast('语音服务网络不可用。请确保可以访问Google服务后刷新页面重试。', 'error');
+    return;
+  }
+  if (!voiceRecognition) {
+    voiceRecognition = initVoiceRecognition();
+    if (!voiceRecognition) return;
+  }
+  if (isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+function startRecording() {
+  const ta = document.getElementById('promptInput');
+  ta.dataset.voiceBase = ta.value ? ta.value + ' ' : '';
+  voiceRecognition._resetFinalTranscript();
+  voiceRecognition._setManuallyStopped(false);
+
+  try {
+    voiceRecognition.start();
+    isRecording = true;
+    document.getElementById('voiceBtn').classList.add('recording');
+    document.getElementById('voiceStatus').textContent = '正在聆听...';
+    toast('🎤 语音输入已开启，请开始说话', 'success');
+  } catch(e) {
+    console.warn('启动语音识别失败:', e);
+    voiceRecognition.stop();
+    setTimeout(() => {
+      try {
+        voiceRecognition.start();
+        isRecording = true;
+        document.getElementById('voiceBtn').classList.add('recording');
+      } catch(e2) {
+        toast('语音识别启动失败，请刷新页面重试', 'error');
+      }
+    }, 300);
+  }
+}
+
+function stopRecording() {
+  if (!voiceRecognition) return;
+  voiceRecognition._setManuallyStopped(true);
+  try { voiceRecognition.stop(); } catch(e) {}
+  isRecording = false;
+  document.getElementById('voiceBtn').classList.remove('recording');
+  const ta = document.getElementById('promptInput');
+  delete ta.dataset.voiceBase;
+}
+
+// 页面加载时检测浏览器支持
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkVoiceSupport);
+} else {
+  checkVoiceSupport();
+}
+/* ===== 语音输入功能结束 ===== */
+
+function useExample(t){document.getElementById('promptInput').value=t;document.getElementById('promptInput').focus()}
+
+function sendMessage(){
+  if(isRecording)stopRecording();
+  const prompt=document.getElementById('promptInput').value.trim();if(!prompt)return;const key=getApiKey();if(!key){showKeyModal();return}
+  const es=document.getElementById('emptyState');if(es)es.remove();
+  const refs=[...refImages],refsValues=refs.map(r=>r.value),hasLocalBase64=refs.some(r=>r.type==='base64');
+  if(hasLocalBase64&&currentModel==='image_gpt'){toast('GPT 模式不支持本地上传图片，请切换到 NanoBanana Pro','error');return}
+  refImages=[];renderRefPreview();document.getElementById('promptInput').value='';
+  if(currentChatIdx<0){chatHistory.push({time:Date.now(),messages:[]});currentChatIdx=chatHistory.length-1}
+  const chat=chatHistory[currentChatIdx],msgItem={prompt,refs:refsValues,model:currentModel,images:[],error:null,startTime:Date.now()};chat.messages.push(msgItem);saveHistory(chatHistory);renderHistoryList();
+  addUserMsg(prompt,refsValues);const lid=addLoadingMsg();
+  const body={prompt};const sv=document.getElementById('sizeSelect').value;if(sv&&sv!=='auto')body.size=sv;if(currentModel==='image_nanoBanana_pro'){const ar=document.getElementById('aspectRatioSelect').value;if(ar&&ar!=='auto')body.aspectRatio=ar}if(refsValues.length)body.urls=refsValues;
+  fetch(`${API_BASE}/${currentModel}`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':key},body:JSON.stringify(body)})
+  .then(r=>r.json()).then(data=>{if(data.code!==200){updateLoadingMsg(lid,'error',data.msg||'请求失败');msgItem.error=data.msg||'请求失败';saveHistory(chatHistory);return}if(!data.data){updateLoadingMsg(lid,'error','接口返回异常');msgItem.error='接口返回异常';saveHistory(chatHistory);return}updateLoadingMsg(lid,'polling',data.data.id);startPolling(data.data.id,lid,key,msgItem,currentChatIdx)})
+  .catch(err=>{updateLoadingMsg(lid,'error','网络错误: '+err.message);msgItem.error=err.message;saveHistory(chatHistory)});
+}
+
+function addUserMsg(prompt,refs){
+  const c=document.getElementById('chatMessages'),d=document.createElement('div');d.className='msg-enter flex justify-end';
+  let refsH='';if(refs.length)refsH='<div class="flex gap-1 mt-2 flex-wrap justify-end">'+refs.map(r=>`<div class="w-9 h-9 rounded-lg overflow-hidden border border-border"><img src="${r}" class="w-full h-full object-cover"></div>`).join('')+'</div>';
+  d.innerHTML=`<div class="max-w-[85%] md:max-w-[65%]"><div class="bg-accent/10 border border-accent/15 rounded-2xl rounded-tr-md px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">${esc(prompt)}</div>${refsH}</div>`;c.appendChild(d);scrollBottom();
+}
+
+function addLoadingMsg(){
+  const c=document.getElementById('chatMessages'),id='msg_'+Date.now(),d=document.createElement('div');d.className='msg-enter flex justify-start';d.id=id;
+  const mName=currentModel==='image_gpt'?'GPT':'NanoBanana Pro';
+  d.innerHTML=`<div class="max-w-[90%] md:max-w-[75%]"><div class="flex items-center gap-2 mb-1.5"><div class="w-5 h-5 rounded-md bg-gradient-to-br from-accent to-emerald-400 flex items-center justify-center flex-shrink-0" style="animation:glow 2s ease-in-out infinite"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="3"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></div><span class="text-[11px] text-muted font-display" id="${id}_header">${mName} 正在创作</span><span class="text-[10px] text-accent/60 font-mono ml-auto" id="${id}_timer">0s</span></div><div class="bg-card border border-border rounded-2xl rounded-tl-md px-4 py-4" id="${id}_card"><div class="shimmer-bg w-full h-16 rounded-xl mb-3"></div><div class="flex items-center gap-2"><div class="typing-dots"><span></span><span></span><span></span></div><span class="text-[11px] text-muted loading-text font-display">提交中...</span></div></div></div>`;
+  c.appendChild(d);const startT=Date.now();activeTimerIntervals[id]=setInterval(()=>{const te=document.getElementById(id+'_timer');if(te)te.textContent=Math.round((Date.now()-startT)/1000)+'s'},1000);scrollBottom();return id;
+}
+
+function updateLoadingMsg(id,status,data){const el=document.getElementById(id+'_card')||document.getElementById(id)?.querySelector('[id$="_card"]');if(!el)return;if(status==='polling'){const t=el.querySelector('.loading-text');if(t)t.textContent='生成中...'}else if(status==='error'){if(activeTimerIntervals[id]){clearInterval(activeTimerIntervals[id]);delete activeTimerIntervals[id]}const hs=document.getElementById(id+'_header');if(hs)hs.textContent=hs.textContent.replace(' 正在创作','');const ts=document.getElementById(id+'_timer');if(ts)ts.remove();el.innerHTML=`<div class="flex items-start gap-2 text-danger text-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>${esc(data)}</span></div>`}}
+
+function completeMsg(id,images){if(activeTimerIntervals[id]){clearInterval(activeTimerIntervals[id]);delete activeTimerIntervals[id]}const hs=document.getElementById(id+'_header'),tsE=document.getElementById(id+'_timer');if(hs){const elapsed=tsE?tsE.textContent:'';hs.textContent=hs.textContent.replace(' 正在创作','')+(elapsed?' · '+elapsed:'')}if(tsE)tsE.remove();const el=document.getElementById(id+'_card')||document.getElementById(id)?.querySelector('[id$="_card"]');if(!el)return;const ij=JSON.stringify(images),s=ij.replace(/'/g,"\\'").replace(/"/g,'&quot;');let h;if(images.length===1)h=`<div class="flex gap-2"><div class="flex-1 relative group"><img src="${PH}" data-src="${images[0]}" class="w-full rounded-xl cursor-pointer hover:brightness-90 transition-all max-h-[420px] object-contain" onclick="openLightbox(${s},0)" loading="lazy"><button onclick="event.stopPropagation();addRefFromUrl('${images[0].replace(/'/g,"\\'")}')" class="absolute bottom-2 right-2 bg-bg/80 hover:bg-accent text-[10px] text-white hover:text-bg font-semibold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" style="backdrop-filter:blur(4px)">用作参考图</button></div><div class="flex flex-col gap-1.5 flex-shrink-0"><button onclick="downloadImg('${images[0].replace(/'/g,"\\'")}')" class="w-9 h-9 rounded-xl bg-card border border-border hover:border-accent hover:bg-accent/10 flex items-center justify-center cursor-pointer transition-all group/dl" title="下载图片"><svg class="w-4 h-4 text-muted group-hover/dl:text-accent transition-colors"><use href="#i-download"/></svg></button></div></div>`;else h=`<div class="grid grid-cols-2 gap-1.5">`+images.map((x,i)=>`<div class="relative group"><img src="${PH}" data-src="${x}" class="w-full rounded-xl cursor-pointer hover:brightness-90 transition-all aspect-square object-cover" onclick="openLightbox(${s},${i})" loading="lazy"><button onclick="event.stopPropagation();addRefFromUrl('${x.replace(/'/g,"\\'")}')" class="absolute bottom-1 right-1 bg-bg/80 hover:bg-accent text-[9px] text-white hover:text-bg font-semibold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-all cursor-pointer" style="backdrop-filter:blur(4px)">参考</button><button onclick="event.stopPropagation();downloadImg('${x.replace(/'/g,"\\'")}')" class="absolute top-1 right-1 w-7 h-7 rounded-lg bg-bg/80 hover:bg-accent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer" style="backdrop-filter:blur(4px)" title="下载"><svg class="w-3.5 h-3.5 text-white"><use href="#i-download"/></svg></button></div>`).join('')+'</div>';el.className='bg-card border border-border rounded-2xl rounded-tl-md px-2.5 py-2.5';el.innerHTML=h;applyCachedImages(el);scrollBottom()}
+
+function startPolling(taskId,msgId,apiKey,msgItem,chatIdx){
+  let att=0;const timer=setInterval(()=>{att++;if(att>200){clearInterval(timer);delete pollingTimers[taskId];updateLoadingMsg(msgId,'error','生成超时');msgItem.error='生成超时';saveHistory(chatHistory);return}
+  fetch(`${API_BASE}/detail?key=${encodeURIComponent(apiKey)}&id=${taskId}`,{headers:{'Authorization':apiKey}})
+  .then(r=>r.json()).then(data=>{if(data.code!==200){clearInterval(timer);delete pollingTimers[taskId];updateLoadingMsg(msgId,'error',data.msg||'查询失败');msgItem.error=data.msg;saveHistory(chatHistory);return}if(!data.data){clearInterval(timer);delete pollingTimers[taskId];updateLoadingMsg(msgId,'error','接口返回异常');msgItem.error='接口返回异常';saveHistory(chatHistory);return}const st=data.data.status;if(st===2){clearInterval(timer);delete pollingTimers[taskId];const clean=u=>typeof u==='string'?u.trim().replace(/^`+|`+$/g,'').trim():'';const res=data.data.result||data.data.results||data.data.output||data.data.images||data.data.urls||[];let imgs=[];if(Array.isArray(res))imgs=res.map(r=>clean(typeof r==='string'?r:(r.url||r.image||r.src||''))).filter(Boolean);else if(typeof res==='string')imgs=[clean(res)];if(data.data.url)imgs.push(clean(data.data.url));if(data.data.image)imgs.push(clean(data.data.image));if(!imgs.length&&data.debug){if(typeof data.debug==='string'){try{const dd=JSON.parse(data.debug);if(Array.isArray(dd))imgs=dd.map(d=>clean(d.url||d.image||d)).filter(Boolean);else if(dd.url)imgs=[clean(dd.url)]}catch(e){}}else if(Array.isArray(data.debug))imgs=data.debug.map(d=>clean(typeof d==='string'?d:(d.url||d.image||''))).filter(Boolean)}if(imgs.length){completeMsg(msgId,imgs);msgItem.images=imgs;if(msgItem.startTime){msgItem.elapsed=Math.round((Date.now()-msgItem.startTime)/1000)}saveHistory(chatHistory);const mi=chatHistory[chatIdx].messages.indexOf(msgItem);imgs.forEach(url=>{allImages.push({url,chatIdx,msgIdx:mi});cacheImage(url)});saveImages(allImages);renderGallery()}else{updateLoadingMsg(msgId,'error','未获取到图片');msgItem.error='未获取到图片';saveHistory(chatHistory)}}else if(st===3){clearInterval(timer);delete pollingTimers[taskId];updateLoadingMsg(msgId,'error',data.data.message||'生成失败');msgItem.error=data.data.message;saveHistory(chatHistory)}else{const t=document.getElementById(msgId)?.querySelector('.loading-text');if(t)t.textContent=st===0?'初始化中...':'生成中...'}}).catch(()=>{})},3000);pollingTimers[taskId]=timer}
+
+function openLightbox(imgs,idx){lbImgs=imgs;lbIdx=idx;lbS=1;lbX=0;lbY=0;updateLb();document.getElementById('lightbox').classList.add('open');document.addEventListener('keydown',lbKey)}
+function closeLightbox(){if(lbBUrl){URL.revokeObjectURL(lbBUrl);lbBUrl=null}document.getElementById('lightbox').classList.remove('open');document.removeEventListener('keydown',lbKey)}
+function lbKey(e){if(e.key==='Escape')closeLightbox();if(e.key==='ArrowLeft')lbPrev();if(e.key==='ArrowRight')lbNext()}
+function updateLb(){resolveImgUrl(lbImgs[lbIdx]).then(u=>{if(lbBUrl&&u!==lbBUrl)URL.revokeObjectURL(lbBUrl);lbBUrl=u!==lbImgs[lbIdx]?u:null;document.getElementById('lbImg').src=u;document.getElementById('lbCounter').textContent=`${lbIdx+1} / ${lbImgs.length}`;lbResetZoom()})}
+function lbPrev(){if(lbImgs.length<=1)return;lbIdx=(lbIdx-1+lbImgs.length)%lbImgs.length;updateLb()}
+function lbNext(){if(lbImgs.length<=1)return;lbIdx=(lbIdx+1)%lbImgs.length;updateLb()}
+function lbResetZoom(){lbS=1;lbX=0;lbY=0;applyLb()}
+function applyLb(){const img=document.getElementById('lbImg'),cv=document.getElementById('lbCanvas');img.style.left=cv.clientWidth/2+'px';img.style.top=cv.clientHeight/2+'px';img.style.transform=`translate(-50%,-50%) translate(${lbX}px,${lbY}px) scale(${lbS})`;document.getElementById('zoomLevel').textContent=Math.round(lbS*100)+'%'}
+function lbWheel(e){e.preventDefault();lbS=Math.max(.1,lbS+(e.deltaY>0?-0.12:.12)*lbS);applyLb()}
+function lbMouseDown(e){if(e.target.tagName==='IMG'){lbDrag=true;lbDS={x:e.clientX,y:e.clientY,ox:lbX,oy:lbY};e.target.classList.add('dragging')}}
+document.addEventListener('mousemove',e=>{if(!lbDrag)return;lbX=lbDS.ox+(e.clientX-lbDS.x);lbY=lbDS.oy+(e.clientY-lbDS.y);applyLb()});
+document.addEventListener('mouseup',()=>{if(lbDrag){lbDrag=false;document.getElementById('lbImg').classList.remove('dragging')}});
+function lbDblClick(){lbS>1.5?lbResetZoom():(lbS=3,applyLb())}
+function lbDownload(){downloadImg(lbImgs[lbIdx])}
+
+function scrollBottom(){const a=document.getElementById('chatArea');requestAnimationFrame(()=>{a.scrollTop=a.scrollHeight})}
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function toast(msg,type){const t=document.getElementById('toast');t._tid&&clearTimeout(t._tid);t.textContent=msg;t.className='toast '+(type||'info');requestAnimationFrame(()=>t.classList.add('show'));t._tid=setTimeout(()=>t.classList.remove('show'),2500)}
+
+function toggleLeftSidebar(){document.getElementById('leftSidebar').classList.toggle('open');document.getElementById('sidebarBackdrop').classList.toggle('show')}
+function toggleRightSidebar(){document.getElementById('rightSidebar').classList.toggle('open');document.getElementById('sidebarBackdrop').classList.toggle('show')}
+function closeSidebars(){document.getElementById('leftSidebar').classList.remove('open');document.getElementById('rightSidebar').classList.remove('open');document.getElementById('sidebarBackdrop').classList.remove('show')}
+
+function exportChat(){
+  if(currentChatIdx<0||!chatHistory[currentChatIdx]){toast('没有可导出的对话','error');return}
+  const chat=chatHistory[currentChatIdx];let md='# 五哥生图 - 对话导出\n\n';
+  md+='> 导出时间: '+new Date().toLocaleString('zh-CN')+'\n\n---\n\n';
+  chat.messages.forEach((msg,i)=>{
+    md+='## 第 '+(i+1)+' 轮\n\n';
+    md+='**模型**: '+(msg.model==='image_nanoBanana_pro'?'NanoBanana Pro':'GPT')+'\n\n';
+    md+='**提示词**:\n\n'+msg.prompt+'\n\n';
+    if(msg.refs&&msg.refs.length)md+='**参考图**: '+msg.refs.length+' 张\n\n';
+    if(msg.elapsed)md+='**耗时**: '+msg.elapsed+'s\n\n';
+    if(msg.images&&msg.images.length){md+='**生成图片**:\n\n';msg.images.forEach((url,j)=>md+='![图片'+(j+1)+']('+url+')\n\n')}
+    if(msg.error)md+='**错误**: '+msg.error+'\n\n';
+    md+='---\n\n';
+  });
+  const blob=new Blob([md],{type:'text/markdown;charset=utf-8'});const a=document.createElement('a');const bUrl=URL.createObjectURL(blob);a.href=bUrl;a.download='五哥生图-对话-'+new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')+'.md';a.click();setTimeout(()=>URL.revokeObjectURL(bUrl),1000);toast('对话已导出','success');
+}
+
+function batchDownload(){
+  if(!allImages.length){toast('没有可下载的图片','error');return}
+  const urls=allImages.map(x=>typeof x==='string'?x:x.url);
+  toast('开始下载 '+urls.length+' 张图片...','success');
+  let i=0;
+  function dlNext(){
+    if(i>=urls.length){toast('全部下载完成','success');return}
+    imgCache.get(urls[i]).then(blob=>{
+      if(blob){
+        const a=document.createElement('a');const bUrl=URL.createObjectURL(blob);a.href=bUrl;a.download='wuge-'+(i+1)+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(bUrl),1000);
+        i++;setTimeout(dlNext,300);
+      }else{
+        fetch(urls[i]).then(r=>r.blob()).then(b=>{
+          const a=document.createElement('a');const bUrl=URL.createObjectURL(b);a.href=bUrl;a.download='wuge-'+(i+1)+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(bUrl),1000);
+          i++;setTimeout(dlNext,600);
+        }).catch(()=>{
+          const a=document.createElement('a');a.href=urls[i];a.download='wuge-'+(i+1)+'.png';a.target='_blank';a.click();
+          i++;setTimeout(dlNext,600);
+        });
+      }
+    }).catch(()=>{
+      window.open(urls[i],'_blank');i++;setTimeout(dlNext,600);
+    });
+  }
+  dlNext();
+}
+
+document.addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dragOverlay').classList.remove('hidden')});
+document.addEventListener('dragleave',e=>{if(!e.relatedTarget||!document.body.contains(e.relatedTarget))document.getElementById('dragOverlay').classList.add('hidden')});
+document.addEventListener('drop',e=>{e.preventDefault();document.getElementById('dragOverlay').classList.add('hidden');Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')).forEach(f=>{compressImage(f).then(data=>{refImages.push({type:'base64',value:data,name:f.name});renderRefPreview()})})});
+
+(function(){let td=0,ts=1,tx=0,ty=0,tox=0,toy=0,pinch=false;const cv=document.getElementById('lbCanvas');cv.addEventListener('touchstart',e=>{if(e.touches.length===2){pinch=true;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;td=Math.sqrt(dx*dx+dy*dy);ts=lbS}else if(e.touches.length===1){pinch=false;tx=e.touches[0].clientX;ty=e.touches[0].clientY;tox=lbX;toy=lbY}},{passive:true});cv.addEventListener('touchmove',e=>{e.preventDefault();if(pinch&&e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;lbS=Math.max(.1,ts*(Math.sqrt(dx*dx+dy*dy)/td));applyLb()}else if(e.touches.length===1&&!pinch){lbX=tox+(e.touches[0].clientX-tx);lbY=toy+(e.touches[0].clientY-ty);applyLb()}},{passive:false});cv.addEventListener('touchend',()=>{pinch=false})})();
+</script>
+</body>
+</html>
