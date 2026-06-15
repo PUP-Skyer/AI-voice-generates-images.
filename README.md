@@ -262,4 +262,4 @@ open http://localhost:8080/五哥生图v1.2-语音版.html
 
 ## 🎬 演示视频
 
-▶️ [AI语音生成图片演示视频](assets/AI语音生成图片.mp4)
+▶️ [AI语音生成图片演示视频](https://www.bilibili.com/video/BV1P6Jg6sE2w)
